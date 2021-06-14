@@ -5,7 +5,7 @@ Feature Comparison of SNN calibration:
 
 | Features                | SNN Direct Training                | ANN-SNN Conversion | SNN Calibration |
 | ----------------------- | ---------------------------------- | ------------------ | --------------- |
-| Accuract ($T<100$)      | High                               | Low                | High            |
+| Accuract (T<100​)        | High                               | Low                | High            |
 | Scalability to ImageNet | Tiny                               | Large              | Large           |
 | Training Speed          | Slow                               | Fast               | Fast            |
 | # Required Data         | Full-set <br />(1.2M For ImageNet) | ~1000              | ~1000           |
@@ -59,13 +59,13 @@ Example results:
 | VGG16        | CIFAR10  | 16   | 1000        | Advanced    | 93.65    | 0.25 |
 | ResNet-20    | CIFAR10  | 16   | 1000        | None        | 67.88    | 3.63 |
 | ResNet-20    | CIFAR10  | 16   | 1000        | Light       | 93.89    | 0.20 |
-| ResNet-20    | CIFAR10  | 16   | 1000        | Advanced    |          |      |
+| ResNet-20    | CIFAR10  | 16   | 1000        | Advanced    | 94.33    | 0.12 |
 | VGG16        | CIFAR100 | 16   | 1000        | None        | 2.69     | 0.76 |
 | VGG16        | CIFAR100 | 16   | 1000        | Light       | 65.26    | 0.99 |
-| VGG16        | CIFAR100 | 16   | 1000        | Advanced    |          |      |
+| VGG16        | CIFAR100 | 16   | 1000        | Advanced    | 70.91    | 0.65 |
 | ResNet-20    | CIFAR100 | 16   | 1000        | None        | 39.27    | 2.85 |
 | ResNet-20    | CIFAR100 | 16   | 1000        | Light       | 73.89    | 0.15 |
-| ResNet-20    | CIFAR100 | 16   | 1000        | Advanced    |          |      |
+| ResNet-20    | CIFAR100 | 16   | 1000        | Advanced    | 74.48    | 0.16 |
 
 
 
