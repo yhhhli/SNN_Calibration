@@ -8,7 +8,7 @@ Feature Comparison of SNN calibration:
 | Accuract ($T<100$)      | High                               | Low                | High            |
 | Scalability to ImageNet | Tiny                               | Large              | Large           |
 | Training Speed          | Slow                               | Fast               | Fast            |
-| # Required Data         | Full-set <br />(1.2M For ImageNet) | $\sim$1000         | $\sim$1000      |
+| # Required Data         | Full-set <br />(1.2M For ImageNet) | ~1000              | ~1000           |
 | Inference Speed         | Fast                               | Slow               | Fast            |
 
 
@@ -52,20 +52,20 @@ The calibration will run for 5 times, and return the mean accuracy as well as th
 
 Example results:
 
-| Architecture | Datset   | T    | Random Seed | Calibration | Accuracy       |
-| ------------ | -------- | ---- | ----------- | ----------- | -------------- |
-| VGG16        | CIFAR10  | 16   | 1000        | None        | 64.52$\pm$4.12 |
-| VGG16        | CIFAR10  | 16   | 1000        | Light       | 93.30$\pm$0.08 |
-| VGG16        | CIFAR10  | 16   | 1000        | Advanced    |                |
-| ResNet-20    | CIFAR10  | 16   | 1000        | None        | 67.88$\pm$3.63 |
-| ResNet-20    | CIFAR10  | 16   | 1000        | Light       | 93.89$\pm$0.20 |
-| ResNet-20    | CIFAR10  | 16   | 1000        | Advanced    |                |
-| VGG16        | CIFAR100 | 16   | 1000        | None        | 2.69$\pm$0.76  |
-| VGG16        | CIFAR100 | 16   | 1000        | Light       | 65.26$\pm$0.99 |
-| VGG16        | CIFAR100 | 16   | 1000        | Advanced    |                |
-| ResNet-20    | CIFAR100 | 16   | 1000        | None        | 39.27$\pm$2.85 |
-| ResNet-20    | CIFAR100 | 16   | 1000        | Light       | 73.89$\pm$0.15 |
-| ResNet-20    | CIFAR100 | 16   | 1000        | Advanced    |                |
+| Architecture | Datset   | T    | Random Seed | Calibration | Mean Acc | Std. |
+| ------------ | -------- | ---- | ----------- | ----------- | -------- | ---- |
+| VGG16        | CIFAR10  | 16   | 1000        | None        | 64.52    | 4.12 |
+| VGG16        | CIFAR10  | 16   | 1000        | Light       | 93.30    | 0.08 |
+| VGG16        | CIFAR10  | 16   | 1000        | Advanced    | 93.65    | 0.25 |
+| ResNet-20    | CIFAR10  | 16   | 1000        | None        | 67.88    | 3.63 |
+| ResNet-20    | CIFAR10  | 16   | 1000        | Light       | 93.89    | 0.20 |
+| ResNet-20    | CIFAR10  | 16   | 1000        | Advanced    |          |      |
+| VGG16        | CIFAR100 | 16   | 1000        | None        | 2.69     | 0.76 |
+| VGG16        | CIFAR100 | 16   | 1000        | Light       | 65.26    | 0.99 |
+| VGG16        | CIFAR100 | 16   | 1000        | Advanced    |          |      |
+| ResNet-20    | CIFAR100 | 16   | 1000        | None        | 39.27    | 2.85 |
+| ResNet-20    | CIFAR100 | 16   | 1000        | Light       | 73.89    | 0.15 |
+| ResNet-20    | CIFAR100 | 16   | 1000        | Advanced    |          |      |
 
 
 
