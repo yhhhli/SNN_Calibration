@@ -21,7 +21,7 @@ For CIFAR experiments, one GPU would suffice.
 
 
 
-## Update (Jan 14, 2021): ImageNet experiments
+## Update (Jan 14, 2022): ImageNet experiments
 
 For imagenet experiments, please first download the checkpoints from [Google Drive](https://drive.google.com/drive/folders/1vwNx4xTF6EG_Brbu-6mGkgC2HcfgtBTe?usp=sharing).
 
