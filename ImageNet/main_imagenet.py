@@ -8,9 +8,10 @@ import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 from ImageNet.models.vgg import vgg16, vgg16_bn, vgg_specials
 from ImageNet.models.resnet import resnet34_snn, res_spcials
-from CIFAR.models.calibration import GetLayerInputOutput, bias_corr_model, weights_cali_model
+from CIFAR.models.calibration import bias_corr_model, weights_cali_model
 from CIFAR.models.fold_bn import search_fold_and_remove_bn
 from CIFAR.models.spiking_layer import SpikeModel, get_maximum_activation
+from distributed_utils import initialize, get_local_rank
 
 
 def build_imagenet_data(data_path: str = '', input_size: int = 224, batch_size: int = 64, workers: int = 4,
@@ -101,6 +102,17 @@ if __name__ == '__main__':
     parser.add_argument('--T', default=16, type=int, help='snn simulation length')
     parser.add_argument('--usebn', action='store_true', help='use batch normalization in ann')
 
+    # Initialize distributed envrionments
+    # Note: If this doesn't work, you may use the method in official torch example:
+    # https://pytorch.org/tutorials/intermediate/dist_tuto.html
+    try:
+        initialize()
+        initialized = True
+        torch.cuda.set_device(get_local_rank())
+    except:
+        print('For some reason, your distributed environment is not initialized, this program may run on separate GPUs')
+        initialized = False
+
     args = parser.parse_args()
     results_list = []
     use_bn = args.usebn
@@ -113,7 +125,7 @@ if __name__ == '__main__':
 
         use_cifar10 = args.dataset == 'CIFAR10'
 
-        train_loader, test_loader = build_imagenet_data(data_path=args.dpath)
+        train_loader, test_loader = build_imagenet_data(data_path=args.dpath, dist_sample=initialized)
 
         if args.arch == 'VGG16':
             ann = vgg16_bn(pretrained=True) if args.usebn else vgg16(pretrained=True)
@@ -125,18 +137,22 @@ if __name__ == '__main__':
         search_fold_and_remove_bn(ann)
         ann.cuda()
 
-        snn = SpikeModel(model=ann, sim_length=sim_length, specials=vgg_specials if args.arch=='VGG16' else res_spcials)
+        snn = SpikeModel(model=ann, sim_length=sim_length, specials=vgg_specials if args.arch =='VGG16' else res_spcials)
         snn.cuda()
 
         mse = False if args.calib == 'none' else True
         get_maximum_activation(train_loader, model=snn, momentum=0.9, iters=5, mse=mse, percentile=None,
-                               sim_length=sim_length, channel_wise=False)
+                               sim_length=sim_length, channel_wise=False, dist_avg=initialized)
+
+        # make sure dist_avg=True to synchronize the data in different GPUs, e.g. gradient and threshold
+        # otherwise each gpu performs its own calibration
 
         if args.calib == 'light':
-            bias_corr_model(model=snn, train_loader=train_loader, correct_mempot=False)
+            bias_corr_model(model=snn, train_loader=train_loader, correct_mempot=False, dist_avg=initialized)
         if args.calib == 'advanced':
-            weights_cali_model(model=snn, train_loader=train_loader, num_cali_samples=1024, learning_rate=1e-5)
-            bias_corr_model(model=snn, train_loader=train_loader, correct_mempot=True)
+            weights_cali_model(model=snn, train_loader=train_loader, num_cali_samples=1024, learning_rate=1e-5,
+                               dist_avg=initialized)
+            bias_corr_model(model=snn, train_loader=train_loader, correct_mempot=True, dist_avg=initialized)
 
         snn.set_spike_state(use_spike=True)
         results_list.append(validate_model(test_loader, snn))

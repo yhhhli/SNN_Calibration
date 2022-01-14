@@ -11,8 +11,6 @@ Feature Comparison of SNN calibration:
 | # Required Data         | Full-set <br />(1.2M For ImageNet) | ~1000              | ~1000           |
 | Inference Speed         | Fast                               | Slow               | Fast            |
 
-
-
 ### Requirements
 
 Pytorch 1.8
@@ -20,6 +18,22 @@ Pytorch 1.8
 For ImageNet experiments, please be sure that you can initialize distributed environments
 
 For CIFAR experiments, one GPU would suffice. 
+
+
+
+## Update (Jan 14, 2021): ImageNet experiments
+
+For imagenet experiments, please first download the checkpoints from [Google Drive](https://drive.google.com/drive/folders/1vwNx4xTF6EG_Brbu-6mGkgC2HcfgtBTe?usp=sharing).
+
+We recommend initialize distributed learning envrionments, utlizing multi-GPU calibration.
+
+For reproducibility, 8 GPUs are per run and distributed envrionments are highly encouraged. 
+
+For example:
+
+```bash
+python ImageNet/main_imagenet.py --arch res34 --T 32 --usebn --calib light --dpath PATH/TO/DATA
+```
 
 
 

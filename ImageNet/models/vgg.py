@@ -12,8 +12,8 @@ __all__ = [
 
 
 model_urls = {
-    'vgg16': '/mnt/lustre/liyuhang1/SNN/raw/vgg16_relu_imagenet.pth.tar',
-    'vgg16_bn': '/mnt/lustre/liyuhang1/prototype_ebs/model_zoo_exp/vgg16_bn_pretrain/checkpoints/ckpt.pth.tar',
+    'vgg16': 'checkpoints/vgg16_snn.pth.tar',
+    'vgg16_bn': 'checkpoints/vgg16_snn.pth.tar',
 }
 
 
@@ -32,7 +32,7 @@ def load_model_pytorch(model, load_model, gpu_n=0):
     if 'module.' in list(load_from.keys())[0]:
         load_from = OrderedDict([(k.replace("module.", ""), v) for k, v in load_from.items()])
 
-    model.load_state_dict(load_from, strict=False)
+    model.load_state_dict(load_from, strict=True)
 
 
 class VGG(nn.Module):

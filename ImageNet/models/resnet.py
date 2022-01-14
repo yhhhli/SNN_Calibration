@@ -348,9 +348,9 @@ def resnet34_snn(pretrained=True, use_bn=True, **kwargs):
     model = ResNet(BasicBlock, [3, 4, 6, 3], deep_stem=True, use_bn=use_bn, **kwargs)
     if pretrained:
         if use_bn:
-            load_model_pytorch(model, '/mnt/lustre/liyuhang1/prototype_ebs/model_zoo_exp/res34_snn/checkpoints/ckpt.pth.tar')
+            load_model_pytorch(model, 'checkpoints/res34_snn.pth.tar')
         else:
-            load_model_pytorch(model, '/mnt/lustre/liyuhang1/prototype_ebs/model_zoo_exp/res34_snn_wobn/checkpoints/ckpt.pth.tar')
+            load_model_pytorch(model, 'checkpoints/res34_snn_wobn.pth.tar')
 
     return model
 
