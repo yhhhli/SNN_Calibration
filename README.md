@@ -85,7 +85,7 @@ Example results:
 
 ### Pre-training ANN on ImageNet
 
-To be updaed
+To be updated
 
 
 
