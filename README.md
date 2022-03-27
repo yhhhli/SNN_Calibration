@@ -1,6 +1,8 @@
 # SNN_Calibration
 **Pytorch Implementation of Spiking Neural Networks Calibration, ICML 2021**
 
+[[PMLR]](http://proceedings.mlr.press/v139/li21d/li21d.pdf), [[arXiv]](https://arxiv.org/pdf/2106.06984.pdf).
+
 Feature Comparison of SNN calibration:
 
 | Features                | SNN Direct Training                | ANN-SNN Conversion | SNN Calibration |
