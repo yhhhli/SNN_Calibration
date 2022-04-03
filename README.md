@@ -7,7 +7,7 @@ Feature Comparison of SNN calibration:
 
 | Features                | SNN Direct Training                | ANN-SNN Conversion | SNN Calibration |
 | ----------------------- | ---------------------------------- | ------------------ | --------------- |
-| Accuract (T<100​)        | High                               | Low                | High            |
+| Accuracy (T<100​)        | High                               | Low                | High            |
 | Scalability to ImageNet | Tiny                               | Large              | Large           |
 | Training Speed          | Slow                               | Fast               | Fast            |
 | # Required Data         | Full-set <br />(1.2M For ImageNet) | ~1000              | ~1000           |
