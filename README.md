@@ -21,6 +21,9 @@ For ImageNet experiments, please be sure that you can initialize distributed env
 
 For CIFAR experiments, one GPU would suffice. 
 
+## Update (May 2, 2022): New version of the code
+
+We are preparing for releasing a new baseline of SNN calibration and new version of the paper. Don't forget to check the new code! 
 
 
 ## Update (Jan 14, 2022): ImageNet experiments
