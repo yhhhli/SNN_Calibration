@@ -1,7 +1,13 @@
 # SNN_Calibration
 **Pytorch Implementation of Spiking Neural Networks Calibration, ICML 2021**
 
-[[PMLR]](http://proceedings.mlr.press/v139/li21d/li21d.pdf), [[arXiv]](https://arxiv.org/pdf/2106.06984.pdf).
+Paper Version 1: [[PMLR]](http://proceedings.mlr.press/v139/li21d/li21d.pdf), [[arXiv]](https://arxiv.org/pdf/2106.06984.pdf).
+
+Paper Version 2: [[arXiv]](https://arxiv.org/pdf/2205.10121.pdf).
+
+When converting ANNs to SNNs, conventional methods ensure the minimization in parameter space, while we focus on the minimization in network output space:
+
+![introduction_figure](figs/introduction.png)
 
 Feature Comparison of SNN calibration:
 
@@ -13,6 +19,7 @@ Feature Comparison of SNN calibration:
 | # Required Data         | Full-set <br />(1.2M For ImageNet) | ~1000              | ~1000           |
 | Inference Speed         | Fast                               | Slow               | Fast            |
 
+
 ### Requirements
 
 Pytorch 1.8
@@ -21,18 +28,18 @@ For ImageNet experiments, please be sure that you can initialize distributed env
 
 For CIFAR experiments, one GPU would suffice. 
 
-## Update (May 2, 2022): New version of the code
+## Update (May 31, 2022): New version of the code
 
-We are preparing for releasing a new baseline of SNN calibration and new version of the paper. Don't forget to check the new code! 
+We released a new version of the paper, and will update the code to match the experiments with that paper. 
 
 
 ## Update (Jan 14, 2022): ImageNet experiments
 
 For imagenet experiments, please first download the checkpoints from [Google Drive](https://drive.google.com/drive/folders/1vwNx4xTF6EG_Brbu-6mGkgC2HcfgtBTe?usp=sharing).
 
-We recommend initialize distributed learning envrionments, utlizing multi-GPU calibration.
+We recommend initializing distributed learning environments, and utlizing multi-GPU calibration.
 
-For reproducibility, 8 GPUs are per run and distributed envrionments are highly encouraged. 
+For reproducibility, 8 GPUs are per run and distributed environments are highly encouraged. 
 
 For example:
 
@@ -67,11 +74,11 @@ Calibrate an SNN with `main_calibration.py`.
 
 `--T` is the time step, `--calib`  is the calibration method, please use *none, light, advanced* for experiments.  
 
-The calibration will run for 5 times, and return the mean accuracy as well as the standard deviation. 
+The calibration will run 5 times, and return the mean accuracy as well as the standard deviation. 
 
 Example results:
 
-| Architecture | Datset   | T    | Random Seed | Calibration | Mean Acc | Std. |
+| Architecture | Dataset   | T    | Random Seed | Calibration | Mean Acc | Std. |
 | ------------ | -------- | ---- | ----------- | ----------- | -------- | ---- |
 | VGG16        | CIFAR10  | 16   | 1000        | None        | 64.52    | 4.12 |
 | VGG16        | CIFAR10  | 16   | 1000        | Light       | 93.30    | 0.08 |
@@ -87,10 +94,24 @@ Example results:
 | ResNet-20    | CIFAR100 | 16   | 1000        | Advanced    | 74.48    | 0.16 |
 
 
+---
+If you feel this repo helps you, please consider citing the following articles:
 
-### Pre-training ANN on ImageNet
+```
+@article{li2022converting,
+  title={Converting Artificial Neural Networks to Spiking Neural Networks via Parameter Calibration},
+  author={Li, Yuhang and Deng, Shikuang and Dong, Xin and Gu, Shi},
+  journal={arXiv preprint arXiv:2205.10121},
+  year={2022}
+}
 
-To be updated
-
-
+@inproceedings{li2021free,
+  title={A free lunch from ANN: Towards efficient, accurate spiking neural networks calibration},
+  author={Li, Yuhang and Deng, Shikuang and Dong, Xin and Gong, Ruihao and Gu, Shi},
+  booktitle={International Conference on Machine Learning},
+  pages={6316--6325},
+  year={2021},
+  organization={PMLR}
+}
+```
 
