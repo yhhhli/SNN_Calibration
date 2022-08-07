@@ -7,7 +7,7 @@ Reference:
 import torch
 import torch.nn as nn
 import math
-from CIFAR.models.utils import AvgPoolConv, StraightThrough
+from CIFAR.models.utils import StraightThrough
 from CIFAR.models.spiking_layer import SpikeModel, SpikeModule, Union
 
 
@@ -48,37 +48,27 @@ class BasicBlock(nn.Module):
         return out
 
 
-class ResNet_Cifar_Modified(nn.Module):
+class ResNet_Cifar(nn.Module):
 
-    def __init__(self, block, layers, num_classes=10, use_bn=True):
-        super(ResNet_Cifar_Modified, self).__init__()
+    def __init__(self, block, layers, num_classes=10, use_bn=True, freeze_avg=True):
+        super(ResNet_Cifar, self).__init__()
 
         global BN
         BN = nn.BatchNorm2d if use_bn else StraightThrough
         global ReLU
         ReLU = nn.ReLU
-
         self.inplanes = 64
-        self.conv1 = nn.Sequential(
-            nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False),
-            BN(64),
-            ReLU(inplace=True),
-            nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1, bias=False),
-            BN(64),
-            ReLU(inplace=True),
-            nn.Conv2d(64, 64, kernel_size=3, stride=2, padding=1, bias=False),
-            BN(64),
-            ReLU(inplace=True),
-        )
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
+        self.bn1 = BN(64)
+        self.relu = ReLU(inplace=True)
         self.layer1 = self._make_layer(block, 64, layers[0])
         self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
         self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
-        self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
-        self.avgpool = AvgPoolConv(kernel_size=2, stride=1, input_channel=512)
-        self.fc = nn.Linear(512, num_classes)
+        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
+        self.fc = nn.Linear(256 * block.expansion, num_classes)
 
         for m in self.modules():
-            if isinstance(m, nn.Conv2d) and not isinstance(m, AvgPoolConv):
+            if isinstance(m, nn.Conv2d):
                 n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
                 m.weight.data.normal_(0, math.sqrt(2. / n))
             elif isinstance(m, nn.BatchNorm2d):
@@ -106,10 +96,11 @@ class ResNet_Cifar_Modified(nn.Module):
 
     def forward(self, x):
         x = self.conv1(x)
+        x = self.bn1(x)
+        x = self.relu(x)
         x = self.layer1(x)
         x = self.layer2(x)
         x = self.layer3(x)
-        x = self.layer4(x)
         x = self.avgpool(x)
         x = x.view(x.size(0), -1)
         x = self.fc(x)
@@ -159,7 +150,12 @@ class SpikeBasicBlock(nn.Module):
 
 
 def resnet20(**kwargs):
-    model = ResNet_Cifar_Modified(BasicBlock, [2, 2, 2, 2], **kwargs)
+    model = ResNet_Cifar(BasicBlock, [3, 3, 3], **kwargs)
+    return model
+
+
+def resnet32(**kwargs):
+    model = ResNet_Cifar(BasicBlock, [5, 5, 5], **kwargs)
     return model
 
 

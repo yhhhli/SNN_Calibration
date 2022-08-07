@@ -3,14 +3,15 @@ from torch.utils.data import DataLoader
 from CIFAR.models.spiking_layer import SpikeModule, SpikeModel, lp_loss
 from distributed_utils.dist_helper import allaverage, allreduce
 from CIFAR.models.resnet import SpikeResModule as SpikeResModule_CIFAR
+from ImageNet.models.resnet import SpikeResModule as SpikeResModule_ImageNet
 
 
 def bias_corr_model(model: SpikeModel, train_loader: torch.utils.data.DataLoader, correct_mempot: bool = False,
                     dist_avg: bool = False):
     """
-    This function corrects the bias or potential in SNN, by matching the
+    This function corrects the bias in SNN, by matching the
     activation expectation in some training set samples.
-    Here we only sample one batch of the training set.
+    Here we only sample one batch of the training set。
 
     :param model: SpikeModel that need to be corrected with bias
     :param train_loader: Training images
@@ -24,15 +25,21 @@ def bias_corr_model(model: SpikeModel, train_loader: torch.utils.data.DataLoader
         # begin bias correction layer-by-layer
         for name, module in model.named_modules():
             if isinstance(module, SpikeModule):
-                print('\nEmpirical Bias Correction for layer {}:'.format(name) if not correct_mempot else
-                      '\nEmpirical Potential Correction for layer {}:'.format(name))
+                print('Empirical Bias Correction for layer {}:'.format(name))
                 emp_bias_corr(model, module, input, correct_mempot, dist_avg)
-        # only perform BC for one time
         break
 
 
 def emp_bias_corr(model: SpikeModel, module: SpikeModule, train_data: torch.Tensor, correct_mempot: bool = False,
                   dist_avg: bool = False):
+    """
+    Empirical Bias Correction for a single layer.
+    Note that the original output must be clipped at 0 to stay non-negative.
+
+    :param model:
+    :param module:
+    :param train_data:
+    """
     # compute the original output
     model.set_spike_state(use_spike=False)
     get_out = GetLayerInputOutput(model, module)
@@ -53,12 +60,10 @@ def emp_bias_corr(model: SpikeModel, module: SpikeModule, train_data: torch.Tens
 
         if dist_avg:
             allaverage(bias)
-        # now let's absorb it.
         if module.bias is None:
             module.bias = - bias
         else:
             module.bias.data = module.bias.data - bias
-        print((-bias).mean(), (-bias).var())
     else:
         # calculate the mean along the batch dimension
         org_mean, snn_mean = org_out.mean(0, keepdim=True), snn_out.mean(0, keepdim=True)
@@ -122,6 +127,9 @@ class GetLayerInputOutput:
                self.data_saver.stored_residual
 
 
+# ------------------------- Weight Calibration ---------------------------
+
+
 def floor_ste(x):
     return (x.floor() - x).detach() + x
 
@@ -129,18 +137,7 @@ def floor_ste(x):
 def weights_cali_model(model: SpikeModel, train_loader: torch.utils.data.DataLoader,
                        learning_rate: float = 4e-5, optimize_iter: int = 5000,
                        batch_size: int = 32, num_cali_samples: int = 1024, dist_avg: bool = False):
-    """
-    This function calibrate the weights in SNN.
 
-    :param model: SpikeModel that need to be corrected with bias
-    :param train_loader: Training images data loader
-    :param learning_rate: the learning rate of WC
-    :param optimize_iter: the total iteration number of WC for each layer
-    :param batch_size: mini-batch size for WC
-    :param num_cali_samples: total sample number of WC
-    :param dist_avg: if True, then average the tensor between distributed GPUs
-    :return: SpikeModel with corrected bias
-    """
     data_sample = []
     for (input, target) in train_loader:
         data_sample += [input]
@@ -150,8 +147,7 @@ def weights_cali_model(model: SpikeModel, train_loader: torch.utils.data.DataLoa
     # begin weights calibration layer-by-layer
 
     for name, module in model.named_modules():
-        if isinstance(module, (SpikeResModule_CIFAR)):
-            print('\nEmpirical Weights Calibration for layer {}:'.format(name))
+        if isinstance(module, (SpikeResModule_ImageNet, SpikeResModule_CIFAR)):
             weights_cali_res_layer(model, module, data_sample, learning_rate, optimize_iter,
                                    batch_size, num_cali_samples, dist_avg=dist_avg)
         elif isinstance(module, SpikeModule):
@@ -161,7 +157,7 @@ def weights_cali_model(model: SpikeModel, train_loader: torch.utils.data.DataLoa
 
 
 def weights_cali_layer(model: SpikeModel, module: SpikeModule, data_sample: torch.Tensor,
-                       learning_rate: float = 1e-5, optimize_iter: int = 10000,
+                       learning_rate: float = 2e-5, optimize_iter: int = 10000,
                        batch_size: int = 32, num_cali_samples: int = 1024, keep_gpu: bool = True,
                        loss_func=lp_loss, dist_avg: bool = False):
 
@@ -194,7 +190,7 @@ def weights_cali_layer(model: SpikeModel, module: SpikeModule, data_sample: torc
         cached_outs = cached_outs.to(device)
 
     # build optimizer and lr scheduler
-    optimizer = torch.optim.SGD([module.weight], lr=learning_rate, weight_decay=0, momentum=0.9)
+    optimizer = torch.optim.Adam([module.weight], lr=learning_rate)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=optimize_iter, eta_min=0.)
 
     model.set_spike_state(use_spike=True)
@@ -224,7 +220,7 @@ def weights_cali_layer(model: SpikeModel, module: SpikeModule, data_sample: torc
 
 def weights_cali_res_layer(model: SpikeModel, module: SpikeModule, data_sample: torch.Tensor,
                            learning_rate: float = 1e-5, optimize_iter: int = 10000,
-                           batch_size: int = 32, num_cali_samples: int = 1024, keep_gpu: bool = True,
+                           batch_size: int = 8, num_cali_samples: int = 256, keep_gpu: bool = True,
                            loss_func=lp_loss, dist_avg: bool = False):
 
     get_out = GetLayerInputOutput(model, module)
@@ -258,7 +254,7 @@ def weights_cali_res_layer(model: SpikeModel, module: SpikeModule, data_sample: 
         cached_ress = cached_ress.to(device)
 
     # build optimizer and lr scheduler
-    optimizer = torch.optim.SGD([module.weight], lr=learning_rate, weight_decay=0, momentum=0.9)
+    optimizer = torch.optim.Adam([module.weight], lr=learning_rate, weight_decay=0)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=optimize_iter, eta_min=0.)
 
     model.set_spike_state(use_spike=True)

@@ -12,6 +12,7 @@ from CIFAR.models.calibration import bias_corr_model, weights_cali_model
 from CIFAR.models.fold_bn import search_fold_and_remove_bn
 from CIFAR.models.spiking_layer import SpikeModel, get_maximum_activation
 from distributed_utils import initialize, get_local_rank
+from ImageNet.models.mobilenet import mobilenetv1
 
 
 def build_imagenet_data(data_path: str = '', input_size: int = 224, batch_size: int = 64, workers: int = 4,
@@ -131,6 +132,8 @@ if __name__ == '__main__':
             ann = vgg16_bn(pretrained=True) if args.usebn else vgg16(pretrained=True)
         elif args.arch == 'res34':
             ann = resnet34_snn(pretrained=True, use_bn=args.usebn)
+        elif args.arch == 'mobilenet':
+            ann = mobilenetv1(pretrained=True)
         else:
             raise NotImplementedError
 

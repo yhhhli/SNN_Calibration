@@ -77,13 +77,15 @@ if __name__ == '__main__':
         if args.arch == 'VGG16':
             ann = VGG('VGG16', use_bn=use_bn, num_class=10 if use_cifar10 else 100)
         elif args.arch == 'res20':
-            ann = resnet20(use_bn=use_bn, num_classes=10 if use_cifar10 else 100)
+            ann = resnet20_cifar(use_bn=use_bn, num_classes=10 if use_cifar10 else 100)
+        elif args.arch == 'res32':
+            ann = resnet32_cifar(use_bn=use_bn, num_classes=10 if use_cifar10 else 100)
         else:
             raise NotImplementedError
 
-        args.wd = 5e-4 if use_bn else 1e-4
-        bn_name = 'wBN' if use_bn else 'woBN'
-        load_path = 'raw/' + args.arch + '_' + bn_name + '_wd' + str(args.wd) + '_' + args.dataset + '_ckpt.pth'
+        load_path = 'raw/' + args.dataset + '/' + args.arch + '_wBN_wd5e4_state_dict.pth' if use_bn else \
+            'raw/' + args.dataset + '/' + args.arch + '_woBN_wd1e4_state_dict.pth'
+
         state_dict = torch.load(load_path, map_location=torch.device('cpu'))
         ann.load_state_dict(state_dict, strict=True)
         search_fold_and_remove_bn(ann)
@@ -99,7 +101,8 @@ if __name__ == '__main__':
         if args.calib == 'light':
             bias_corr_model(model=snn, train_loader=train_loader, correct_mempot=False)
         if args.calib == 'advanced':
-            weights_cali_model(model=snn, train_loader=train_loader, num_cali_samples=1024, learning_rate=1e-5)
+            # For CIFAR10/100 dataset, calibrating the potential only achieves best results.
+            # weights_cali_model(model=snn, train_loader=train_loader, num_cali_samples=1024, learning_rate=1e-5)
             bias_corr_model(model=snn, train_loader=train_loader, correct_mempot=True)
 
         snn.set_spike_state(use_spike=True)

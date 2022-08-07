@@ -5,7 +5,7 @@ import numpy as np
 import torch.nn.functional as F
 from typing import Callable, Tuple, List, Union, Dict, cast
 from torch.utils.data import DataLoader
-from CIFAR.models.utils import StraightThrough, AvgPoolConv
+from CIFAR.models.utils import StraightThrough
 from distributed_utils.dist_helper import allaverage
 
 
@@ -15,8 +15,11 @@ from distributed_utils.dist_helper import allaverage
 class SpikeModule(nn.Module):
     """
     Spike-based Module that can handle spatial-temporal information.
+    threshold :param that decides the maximum value
+    conv :param is the original normal conv2d module
     """
-    def __init__(self, sim_length: int, conv: Union[nn.Conv2d, nn.Linear], enable_shift: bool = True):
+    def __init__(self, sim_length: int, conv: Union[nn.Conv2d, nn.Linear], enable_shift: bool = True,
+                 safe_int: bool = True):
         super(SpikeModule, self).__init__()
         if isinstance(conv, nn.Conv2d):
             self.fwd_kwargs = {"stride": conv.stride, "padding": conv.padding,
@@ -36,7 +39,7 @@ class SpikeModule(nn.Module):
         else:
             self.bias = None
             self.org_bias = None
-        # de-activate the spike forward default
+        # de-activate the spike forward for default setup
         self.use_spike = False
         self.enable_shift = enable_shift
         self.sim_length = sim_length
@@ -44,7 +47,7 @@ class SpikeModule(nn.Module):
         self.relu = StraightThrough()
 
     def forward(self, input: torch.Tensor):
-        if self.use_spike:
+        if self.use_spike and not isinstance(self.relu, StraightThrough):
             self.cur_t += 1
             x = self.fwd_func(input, self.weight, self.bias, **self.fwd_kwargs)
             if self.enable_shift is True and self.threshold is not None:
@@ -76,17 +79,14 @@ class SpikeModel(nn.Module):
     def spike_module_refactor(self, module: nn.Module, sim_length: int, prev_module=None):
         """
         Recursively replace the normal conv2d to SpikeConv2d
-
         :param module: nn.Module with nn.Conv2d or nn.Linear in its children
-        :param sim_length: simulation length, aka total time steps
-        :param prev_module: use this to add relu to prev_spikemodule
         """
         prev_module = prev_module
         for name, immediate_child_module in module.named_children():
             if type(immediate_child_module) in self.specials:
                 setattr(module, name, self.specials[type(immediate_child_module)]
                                                         (immediate_child_module, sim_length=sim_length))
-            elif isinstance(immediate_child_module, nn.Conv2d) and not isinstance(immediate_child_module, AvgPoolConv):
+            elif isinstance(immediate_child_module, nn.Conv2d):
                 setattr(module, name, SpikeModule(sim_length=sim_length, conv=immediate_child_module))
                 prev_module = getattr(module, name)
             elif isinstance(immediate_child_module, (nn.ReLU, nn.ReLU6)):
@@ -95,10 +95,9 @@ class SpikeModel(nn.Module):
                     setattr(module, name, StraightThrough())
                 else:
                     continue
-            elif isinstance(immediate_child_module, AvgPoolConv):
-                relu = immediate_child_module.relu
-                setattr(module, name, SpikeModule(sim_length=sim_length, conv=immediate_child_module))
-                getattr(module, name).add_module('relu', relu)
+            elif isinstance(immediate_child_module, nn.Linear):
+                self.classifier = copy.deepcopy(immediate_child_module)
+                setattr(module, name, StraightThrough())
             else:
                 prev_module = self.spike_module_refactor(immediate_child_module, sim_length=sim_length, prev_module=prev_module)
 
@@ -124,7 +123,6 @@ class SpikeModel(nn.Module):
         else:
             out = self.model(input)
         return out
-
 
 # ------------------------- Max Activation ---------------------------
 
@@ -186,13 +184,26 @@ def find_threshold_mse(tensor: torch.Tensor, T: int = 8, channel_wise: bool = Tr
         snn_out = torch.clamp(tensor / Vth * T, min=0, max=T)
         return snn_out.floor() * Vth / T
 
-    if channel_wise:
-        num_channel =tensor.shape[1]
-        best_Vth = torch.ones(num_channel).type_as(tensor)
-        # determine the Vth channel-by-channel
+    if channel_wise and len(tensor.shape) == 4:
+        num_channel = tensor.shape[1]
+        # best_Vth = torch.ones(num_channel).type_as(tensor)
+        # # determine the Vth channel-by-channel
+        # for i in range(num_channel):
+        #     best_Vth[i] = find_threshold_mse(tensor[:, i], T, channel_wise=False)
+        # best_Vth = best_Vth.reshape(1, num_channel, 1, 1) if len(tensor.shape)==4 else best_Vth.reshape(1, num_channel)
+        max_act = torch.ones(num_channel).type_as(tensor)
         for i in range(num_channel):
-            best_Vth[i] = find_threshold_mse(tensor[:, i], T, channel_wise=False)
-        best_Vth = best_Vth.reshape(1, num_channel, 1, 1) if len(tensor.shape)==4 else best_Vth.reshape(1, num_channel)
+            max_act[i] = tensor[:, i].max()
+        max_act = max_act.reshape(1, num_channel, 1, 1)
+        best_score = torch.ones_like(max_act).mul(1e10)
+        best_Vth = torch.clone(max_act)
+        for i in range(95):
+            new_Vth = max_act * (1.0 - (i * 0.01))
+            mse = lp_loss(tensor, clip_floor(tensor, T, new_Vth), p=2.0, reduction='channel_split')
+            mse = mse.reshape(1, num_channel, 1, 1)
+            mask = mse < best_score
+            best_score[mask] = mse[mask]
+            best_Vth[mask] = new_Vth[mask]
     else:
         max_act = tensor.max()
         best_score = 1e5
@@ -251,6 +262,7 @@ def lp_loss(pred, tgt, p=2.0, reduction='none'):
     if reduction == 'none':
         return (pred-tgt).abs().pow(p).sum(1).mean()
     elif reduction == 'channel_split':
-        return (pred-tgt).abs().pow(p).sum((0,2,3))
+        return (pred-tgt).abs().pow(p).sum((0, 2, 3))
     else:
         return (pred-tgt).abs().pow(p).mean()
+

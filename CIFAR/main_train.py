@@ -11,21 +11,10 @@ import torchvision.transforms as transforms
 from torchvision.datasets import CIFAR10, CIFAR100
 from data.autoaugment import CIFAR10Policy, Cutout
 from CIFAR.models.vgg import VGG
-from CIFAR.models.resnet import resnet20
+from CIFAR.models.resnet import resnet20, resnet32
 
 
-def seed_all(seed=1000):
-    random.seed(seed)
-    os.environ['PYTHONHASHSEED'] = str(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)  # if you are using multi-GPU.
-    torch.backends.cudnn.benchmark = False
-    torch.backends.cudnn.deterministic = True
-
-
-def build_data(dpath: str, batch_size=128, cutout=False, workers=4, use_cifar10=False, auto_aug=False):
+def build_data(batch_size=128, cutout=False, workers=4, use_cifar10=False, auto_aug=False):
 
     aug = [transforms.RandomCrop(32, padding=4), transforms.RandomHorizontalFlip()]
     if auto_aug:
@@ -45,8 +34,10 @@ def build_data(dpath: str, batch_size=128, cutout=False, workers=4, use_cifar10=
             transforms.Normalize(
                 (0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
         ])
-        train_dataset = CIFAR10(root=dpath, train=True, download=True, transform=transform_train)
-        val_dataset = CIFAR10(root=dpath, train=False, download=True, transform=transform_test)
+        train_dataset = CIFAR10(root='/mnt/lustre/share/prototype_cifar/cifar10/',
+                                train=True, download=False, transform=transform_train)
+        val_dataset = CIFAR10(root='/mnt/lustre/share/prototype_cifar/cifar10/',
+                              train=False, download=False, transform=transform_test)
 
     else:
         aug.append(
@@ -59,8 +50,10 @@ def build_data(dpath: str, batch_size=128, cutout=False, workers=4, use_cifar10=
             transforms.Normalize(
                 (0.5071, 0.4867, 0.4408), (0.2675, 0.2565, 0.2761)),
         ])
-        train_dataset = CIFAR100(root=dpath, train=True, download=True, transform=transform_train)
-        val_dataset = CIFAR100(root=dpath, train=False, download=True, transform=transform_test)
+        train_dataset = CIFAR100(root='/mnt/lustre/share/prototype_cifar/cifar100/',
+                                 train=True, download=False, transform=transform_train)
+        val_dataset = CIFAR100(root='/mnt/lustre/share/prototype_cifar/cifar100/',
+                               train=False, download=False, transform=transform_test)
 
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True,
                               num_workers=workers, pin_memory=True)
@@ -76,41 +69,45 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='model parameters',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument('--dataset', default='CIFAR10', type=str, help='dataset name', choices=['CIFAR10', 'CIFAR100'])
-    parser.add_argument('--arch', default='VGG16', type=str, help='network architecture', choices=['VGG16', 'res20'])
-    parser.add_argument('--dpath', required=True, type=str, help='dataset directory')
-    parser.add_argument('--seed', default=1000, type=int, help='random seed to reproduce results')
+    parser.add_argument('--dataset', default='CIFAR100', type=str, help='dataset name',
+                        choices=['MNIST', 'CIFAR10', 'CIFAR100'])
+    parser.add_argument('--arch', default='res20', type=str, help='dataset name',
+                        choices=['CIFARNet', 'VGG16', 'CNN2', 'res20', 'res20m', 'mobv1'])
     parser.add_argument('--batch_size', default=128, type=int, help='minibatch size')
     parser.add_argument('--learning_rate', default=1e-2, type=float, help='initial learning_rate')
-    parser.add_argument('--epochs', default=300, type=int, help='number of training epochs')
-    parser.add_argument('--wd', default=5e-4, type=float, help='weight decay (L2 regularization)')
+    parser.add_argument('--T', default=100, type=int, help='snn simulation length')
+    parser.add_argument('--m', default='normal', type=str, help='calibration type',
+                        choices=['normal', 'light', 'advanced'])
     parser.add_argument('--usebn', action='store_true', help='use batch normalization in ann')
 
     args = parser.parse_args()
 
-    seed_all(args.seed)
-
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
     batch_size = args.batch_size
     learning_rate = args.learning_rate
-    num_epochs = args.epochs
-
+    activation_save_name = args.arch + '_' + args.dataset + '_activation.npy'
     use_cifar10 = args.dataset == 'CIFAR10'
-    train_loader, test_loader = build_data(dpath=args.dpath, cutout=True, use_cifar10=use_cifar10, auto_aug=True)
+
+    train_loader, test_loader = build_data(cutout=True, use_cifar10=use_cifar10, auto_aug=True)
     best_acc = 0
     best_epoch = 0
     use_bn = args.usebn
-    args.wd = 5e-4 if use_bn else 1e-4
-    bn_name = 'wBN' if use_bn else 'woBN'
-    model_save_name = 'raw/' + args.arch + '_' + bn_name + '_wd' + str(args.wd) + '_' + args.dataset + '_ckpt.pth'
+    model_save_name = 'raw/' + args.dataset + '/' + args.arch + '_wBN_wd5e4_state_dict.pth' if use_bn else \
+                      'raw/' + args.dataset + '/' + args.arch + '_woBN_wd1e4_state_dict.pth'
 
-    if args.arch == 'VGG16':
+    if args.arch == 'CNN2':
+        raise NotImplementedError
+    elif args.arch == 'VGG16':
         ann = VGG('VGG16', use_bn=use_bn, num_class=10 if use_cifar10 else 100)
     elif args.arch == 'res20':
-        ann = resnet20(use_bn=use_bn,  num_classes=10 if use_cifar10 else 100)
+        ann = resnet20(use_bn=use_bn, num_classes=10 if use_cifar10 else 100)
+    elif args.arch == 'res32':
+        ann = resnet32(use_bn=use_bn, num_classes=10 if use_cifar10 else 100)
     else:
         raise NotImplementedError
 
+    num_epochs = 300
     ann.to(device)
     criterion = nn.CrossEntropyLoss().to(device)
     # build optimizer
@@ -131,7 +128,7 @@ if __name__ == '__main__':
             running_loss += loss.item()
             loss.backward()
             optimizer.step()
-            if (i + 1) % 40 == 0:
+            if (i + 1) % 100 == 0:
                 print('Epoch [%d/%d], Step [%d/%d], Loss: %.5f'
                       % (epoch + 1, num_epochs, i + 1, len(train_loader) // batch_size, running_loss))
                 running_loss = 0
@@ -155,12 +152,12 @@ if __name__ == '__main__':
                     acc = 100. * float(correct) / float(total)
                     print(batch_idx, len(test_loader), ' Acc: %.5f' % acc)
 
-        print('Iters:', epoch)
         print('Test Accuracy of the model on the 10000 test images: %.3f' % (100 * correct / total))
+
         acc = 100. * float(correct) / float(total)
         if best_acc < acc:
             best_acc = acc
             best_epoch = epoch + 1
             torch.save(ann.state_dict(), model_save_name)
         print('best_acc is: ', best_acc, ' find in epoch: ', best_epoch)
-        print('\n\n')
+        print('Iters:', epoch, '\n\n\n')
