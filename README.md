@@ -7,7 +7,7 @@ Paper Version 2: [[arXiv]](https://arxiv.org/pdf/2205.10121.pdf).
 
 When converting ANNs to SNNs, conventional methods ensure the minimization in parameter space, while we focus on the minimization in network output space:
 
-![introduction_figure](figs/introduction.png)
+![introduction_figure](doc/figs/introduction.png)
 
 Feature Comparison of SNN calibration:
 
@@ -44,16 +44,18 @@ For reproducibility, 8 GPUs are per run and distributed environments are highly 
 For example:
 
 ```bash
-python ImageNet/main_imagenet.py --arch res34 --T 32 --usebn --calib light --dpath PATH/TO/DATA
+python main_cal_imagenet.py --arch res34 --T 32 --usebn --calib light --dpath PATH/TO/DATA
 ```
 
 
 
 ### Pre-training ANN on CIFAR10&100
 
-Train an ANN model with `main_train.py`
+Train an ANN model with `main_train_cifar.py`
 
-`python CIFAR/main_train.py --dataset CIFAR10 --arch VGG16 --dpath PATH/TO/DATA --usebn `
+```bash
+python main_train_cifar.py --dataset CIFAR10 --arch VGG16 --usebn 
+```
 
 Pre-trained results:
 
@@ -68,9 +70,11 @@ Pre-trained results:
 
 ### SNN Calibration on CIFAR10&100
 
-Calibrate an SNN with `main_calibration.py`.
+Calibrate an SNN with `main_cal_cifar.py`.
 
-`python CIFAR/main_calibration.py --dataset CIFAR10 --arch VGG16 --T 16 --usebn --calib advanced --dpath PATH/TO/DATA `
+```bash
+python main_cal_cifar.py --dataset CIFAR10 --arch VGG16 --T 16 --usebn --calib advanced --dpath PATH/TO/DATA
+```
 
 `--T` is the time step, `--calib`  is the calibration method, please use *none, light, advanced* for experiments.  
 
