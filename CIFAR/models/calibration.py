@@ -79,6 +79,7 @@ class ActivationSaverHook:
     Note that we have to accumulate T times of the output
     if the model spike state is TRUE.
     """
+
     def __init__(self):
         self.stored_output = None
         self.stored_input = None
@@ -124,7 +125,7 @@ class GetLayerInputOutput:
         _ = self.model(input)
         h.remove()
         return self.data_saver.stored_input.detach(), self.data_saver.stored_output.detach(), \
-               self.data_saver.stored_residual
+            self.data_saver.stored_residual
 
 
 # ------------------------- Weight Calibration ---------------------------

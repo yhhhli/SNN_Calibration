@@ -6,6 +6,7 @@ class StraightThrough(nn.Module):
     """
 
     """
+
     def __init__(self, channel_num: int = 1):
         super().__init__()
 
@@ -18,6 +19,7 @@ class AvgPoolConv(nn.Conv2d):
     Converting the AvgPool layers to a convolution-wrapped module,
     so that this module can be identified in Spiking-refactor.
     """
+
     def __init__(self, kernel_size=2, stride=2, input_channel=64, padding=0, freeze_avg=True):
         super().__init__(input_channel, input_channel, kernel_size, padding=padding, stride=stride,
                          groups=input_channel, bias=False)
@@ -67,6 +69,6 @@ class AverageMeter(object):
             self.avg = np.mean(self.history)
         else:
             self.val = val
-            self.sum += val*num
+            self.sum += val * num
             self.count += num
             self.avg = self.sum / self.count

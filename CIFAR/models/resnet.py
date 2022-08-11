@@ -114,6 +114,7 @@ class SpikeResModule(SpikeModule):
     threshold :param that decides the maximum value
     conv :param is the original normal conv2d module
     """
+
     def __init__(self, sim_length: int, conv: Union[nn.Conv2d, nn.Linear], enable_shift: bool = True):
         super(SpikeResModule, self).__init__(sim_length, conv, enable_shift)
 

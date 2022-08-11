@@ -42,7 +42,7 @@ def fold_bn_into_conv(conv_module, bn_module, avg=False):
 def reset_bn(module: nn.BatchNorm2d):
     if module.track_running_stats:
         module.running_mean.zero_()
-        module.running_var.fill_(1-module.eps)
+        module.running_var.fill_(1 - module.eps)
         # we do not reset numer of tracked batches here
         # self.num_batches_tracked.zero_()
     if module.affine:

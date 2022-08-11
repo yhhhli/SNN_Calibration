@@ -42,3 +42,11 @@ Thumbs.db
 # Ignore ImageNet Pre-trained Models #
 ######################################
 *ImageNet/checkpoint/*
+
+# Ignore datasets #
+######################################
+datasets/*
+
+# Ignore saved models #
+######################################
+raw/*
