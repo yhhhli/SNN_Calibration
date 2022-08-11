@@ -1,9 +1,10 @@
 import torch
-from torch.utils.data import DataLoader
-from CIFAR.models.spiking_layer import SpikeModule, SpikeModel, lp_loss
 from distributed_utils.dist_helper import allaverage, allreduce
-from CIFAR.models.resnet import SpikeResModule as SpikeResModule_CIFAR
-from ImageNet.models.resnet import SpikeResModule as SpikeResModule_ImageNet
+
+from models.spiking_layer import SpikeModel, SpikeModule, lp_loss
+
+from .CIFAR.models.resnet import SpikeResModule as SpikeResModule_CIFAR
+from .ImageNet.models.resnet import SpikeResModule as SpikeResModule_ImageNet
 
 
 def bias_corr_model(model: SpikeModel, train_loader: torch.utils.data.DataLoader, correct_mempot: bool = False,

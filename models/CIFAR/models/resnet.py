@@ -7,8 +7,8 @@ Reference:
 import torch
 import torch.nn as nn
 import math
-from CIFAR.models.utils import StraightThrough
-from CIFAR.models.spiking_layer import SpikeModel, SpikeModule, Union
+from ...utils import StraightThrough
+from ...spiking_layer import SpikeModule, Union
 
 
 def conv3x3(in_planes, out_planes, stride=1):

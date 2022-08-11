@@ -1,20 +1,19 @@
-import torch
 import argparse
-import random
-import numpy as np
 import os
 import time
 
-from torch.utils.data import DataLoader
+import torch
 import torch.nn as nn
 import torchvision.transforms as transforms
+from torch.utils.data import DataLoader
 from torchvision.datasets import CIFAR10, CIFAR100
+
 from data.autoaugment import CIFAR10Policy, Cutout
-from CIFAR.models.vgg import VGG
-from CIFAR.models.resnet import resnet20, resnet32
+from models.CIFAR.models.resnet import resnet20, resnet32
+from models.CIFAR.models.vgg import VGG
 
 
-def build_data(batch_size=128, cutout=False, workers=4, use_cifar10=False, auto_aug=False):
+def build_data(dpath='./datasets', batch_size=128, cutout=False, workers=4, use_cifar10=False, auto_aug=False):
 
     aug = [transforms.RandomCrop(32, padding=4), transforms.RandomHorizontalFlip()]
     if auto_aug:
@@ -34,9 +33,9 @@ def build_data(batch_size=128, cutout=False, workers=4, use_cifar10=False, auto_
             transforms.Normalize(
                 (0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
         ])
-        train_dataset = CIFAR10(root='/mnt/lustre/share/prototype_cifar/cifar10/',
+        train_dataset = CIFAR10(root=os.path.join(dpath, 'cifar10/'),
                                 train=True, download=False, transform=transform_train)
-        val_dataset = CIFAR10(root='/mnt/lustre/share/prototype_cifar/cifar10/',
+        val_dataset = CIFAR10(root=os.path.join(dpath, 'cifar10/'),
                               train=False, download=False, transform=transform_test)
 
     else:
@@ -50,9 +49,9 @@ def build_data(batch_size=128, cutout=False, workers=4, use_cifar10=False, auto_
             transforms.Normalize(
                 (0.5071, 0.4867, 0.4408), (0.2675, 0.2565, 0.2761)),
         ])
-        train_dataset = CIFAR100(root='/mnt/lustre/share/prototype_cifar/cifar100/',
+        train_dataset = CIFAR100(root=os.path.join(dpath, 'cifar100'),
                                  train=True, download=False, transform=transform_train)
-        val_dataset = CIFAR100(root='/mnt/lustre/share/prototype_cifar/cifar100/',
+        val_dataset = CIFAR100(root=os.path.join(dpath, 'cifar100'),
                                train=False, download=False, transform=transform_test)
 
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True,

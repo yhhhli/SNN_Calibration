@@ -1,9 +1,10 @@
 import torch
 import torch.nn as nn
-from CIFAR.models.utils import AvgPoolConv, StraightThrough
-from ImageNet.models.vgg import load_model_pytorch
-from CIFAR.models.spiking_layer import SpikeModule, Union
 
+from models.spiking_layer import SpikeModule, Union
+from models.utils import AvgPoolConv, StraightThrough
+
+from .vgg import load_model_pytorch
 
 __all__ = ['ResNet', 'resnet34_snn']
 
@@ -287,6 +288,7 @@ class SpikeResModule(SpikeModule):
     threshold :param that decides the maximum value
     conv :param is the original normal conv2d module
     """
+
     def __init__(self, sim_length: int, conv: Union[nn.Conv2d, nn.Linear], enable_shift: bool = True):
         super(SpikeResModule, self).__init__(sim_length, conv, enable_shift)
 

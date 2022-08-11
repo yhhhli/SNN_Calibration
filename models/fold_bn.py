@@ -1,7 +1,8 @@
 import torch
 import torch.nn as nn
-from CIFAR.models.utils import StraightThrough
 import torch.nn.init as init
+
+from models.utils import StraightThrough
 
 
 def _fold_bn(conv_module, bn_module, avg=False):

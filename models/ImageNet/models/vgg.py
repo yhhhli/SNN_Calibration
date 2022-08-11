@@ -1,10 +1,12 @@
+from collections import OrderedDict
+from typing import Any, Dict, List, Union, cast
+
 import torch
 import torch.nn as nn
-# from .utils import load_state_dict_from_url
-from typing import Union, List, Dict, Any, cast
-from CIFAR.models.spiking_layer import SpikeModule
-from CIFAR.models.vgg import AvgPoolConv
-from collections import OrderedDict
+
+from models.spiking_layer import SpikeModule
+
+from ...utils import AvgPoolConv
 
 __all__ = [
     'VGG', 'vgg16', 'vgg16_bn'
@@ -103,6 +105,7 @@ class VGGClassifier(nn.Sequential):
     """
     A wrapper module for Special Spiking Conversion
     """
+
     def __init__(self, *module_list):
         super().__init__(*module_list)
 

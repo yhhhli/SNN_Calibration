@@ -1,13 +1,13 @@
 import copy
+from typing import Union
+
+import numpy as np
 import torch
 import torch.nn as nn
-import numpy as np
 import torch.nn.functional as F
-from typing import Callable, Tuple, List, Union, Dict, cast
-from torch.utils.data import DataLoader
-from CIFAR.models.utils import StraightThrough
 from distributed_utils.dist_helper import allaverage
 
+from .utils import StraightThrough
 
 # ------------------------- New Version ---------------------------
 
@@ -192,7 +192,8 @@ def find_threshold_mse(tensor: torch.Tensor, T: int = 8, channel_wise: bool = Tr
         # # determine the Vth channel-by-channel
         # for i in range(num_channel):
         #     best_Vth[i] = find_threshold_mse(tensor[:, i], T, channel_wise=False)
-        # best_Vth = best_Vth.reshape(1, num_channel, 1, 1) if len(tensor.shape)==4 else best_Vth.reshape(1, num_channel)
+        # best_Vth = best_Vth.reshape(1, num_channel, 1, 1) if len(
+        #     tensor.shape) == 4 else best_Vth.reshape(1, num_channel)
         max_act = torch.ones(num_channel).type_as(tensor)
         for i in range(num_channel):
             max_act[i] = tensor[:, i].max()
