@@ -1,9 +1,10 @@
 import torch
-from torch.utils.data import DataLoader
-from CIFAR.models.spiking_layer import SpikeModule, SpikeModel, lp_loss
 from distributed_utils.dist_helper import allaverage, allreduce
-from CIFAR.models.resnet import SpikeResModule as SpikeResModule_CIFAR
-from ImageNet.models.resnet import SpikeResModule as SpikeResModule_ImageNet
+
+from models.spiking_layer import SpikeModel, SpikeModule, lp_loss
+
+from .CIFAR.models.resnet import SpikeResModule as SpikeResModule_CIFAR
+from .ImageNet.models.resnet import SpikeResModule as SpikeResModule_ImageNet
 
 
 def bias_corr_model(model: SpikeModel, train_loader: torch.utils.data.DataLoader, correct_mempot: bool = False,
@@ -79,6 +80,7 @@ class ActivationSaverHook:
     Note that we have to accumulate T times of the output
     if the model spike state is TRUE.
     """
+
     def __init__(self):
         self.stored_output = None
         self.stored_input = None
@@ -124,7 +126,7 @@ class GetLayerInputOutput:
         _ = self.model(input)
         h.remove()
         return self.data_saver.stored_input.detach(), self.data_saver.stored_output.detach(), \
-               self.data_saver.stored_residual
+            self.data_saver.stored_residual
 
 
 # ------------------------- Weight Calibration ---------------------------

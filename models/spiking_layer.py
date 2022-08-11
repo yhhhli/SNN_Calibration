@@ -1,13 +1,13 @@
 import copy
+from typing import Union
+
+import numpy as np
 import torch
 import torch.nn as nn
-import numpy as np
 import torch.nn.functional as F
-from typing import Callable, Tuple, List, Union, Dict, cast
-from torch.utils.data import DataLoader
-from CIFAR.models.utils import StraightThrough
 from distributed_utils.dist_helper import allaverage
 
+from .utils import StraightThrough
 
 # ------------------------- New Version ---------------------------
 
@@ -18,6 +18,7 @@ class SpikeModule(nn.Module):
     threshold :param that decides the maximum value
     conv :param is the original normal conv2d module
     """
+
     def __init__(self, sim_length: int, conv: Union[nn.Conv2d, nn.Linear], enable_shift: bool = True,
                  safe_int: bool = True):
         super(SpikeModule, self).__init__()
@@ -85,7 +86,7 @@ class SpikeModel(nn.Module):
         for name, immediate_child_module in module.named_children():
             if type(immediate_child_module) in self.specials:
                 setattr(module, name, self.specials[type(immediate_child_module)]
-                                                        (immediate_child_module, sim_length=sim_length))
+                        (immediate_child_module, sim_length=sim_length))
             elif isinstance(immediate_child_module, nn.Conv2d):
                 setattr(module, name, SpikeModule(sim_length=sim_length, conv=immediate_child_module))
                 prev_module = getattr(module, name)
@@ -99,7 +100,8 @@ class SpikeModel(nn.Module):
                 self.classifier = copy.deepcopy(immediate_child_module)
                 setattr(module, name, StraightThrough())
             else:
-                prev_module = self.spike_module_refactor(immediate_child_module, sim_length=sim_length, prev_module=prev_module)
+                prev_module = self.spike_module_refactor(
+                    immediate_child_module, sim_length=sim_length, prev_module=prev_module)
 
         return prev_module
 
@@ -168,7 +170,7 @@ def quantile(tensor: torch.Tensor, p: float):
         return torch.quantile(tensor, p)
     except:
         tensor_np = tensor.cpu().detach().numpy()
-        return torch.tensor(np.percentile(tensor_np, q=p*100)).type_as(tensor)
+        return torch.tensor(np.percentile(tensor_np, q=p * 100)).type_as(tensor)
 
 
 def find_threshold_mse(tensor: torch.Tensor, T: int = 8, channel_wise: bool = True):
@@ -180,7 +182,7 @@ def find_threshold_mse(tensor: torch.Tensor, T: int = 8, channel_wise: bool = Tr
     :param channel_wise: set threshold channel-wise
     :return: threshold with MMSE
     """
-    def clip_floor(tensor:torch.Tensor, T: int, Vth: Union[float, torch.Tensor]):
+    def clip_floor(tensor: torch.Tensor, T: int, Vth: Union[float, torch.Tensor]):
         snn_out = torch.clamp(tensor / Vth * T, min=0, max=T)
         return snn_out.floor() * Vth / T
 
@@ -190,7 +192,8 @@ def find_threshold_mse(tensor: torch.Tensor, T: int = 8, channel_wise: bool = Tr
         # # determine the Vth channel-by-channel
         # for i in range(num_channel):
         #     best_Vth[i] = find_threshold_mse(tensor[:, i], T, channel_wise=False)
-        # best_Vth = best_Vth.reshape(1, num_channel, 1, 1) if len(tensor.shape)==4 else best_Vth.reshape(1, num_channel)
+        # best_Vth = best_Vth.reshape(1, num_channel, 1, 1) if len(
+        #     tensor.shape) == 4 else best_Vth.reshape(1, num_channel)
         max_act = torch.ones(num_channel).type_as(tensor)
         for i in range(num_channel):
             max_act[i] = tensor[:, i].max()
@@ -260,9 +263,8 @@ def get_maximum_activation(train_loader: torch.utils.data.DataLoader,
 
 def lp_loss(pred, tgt, p=2.0, reduction='none'):
     if reduction == 'none':
-        return (pred-tgt).abs().pow(p).sum(1).mean()
+        return (pred - tgt).abs().pow(p).sum(1).mean()
     elif reduction == 'channel_split':
-        return (pred-tgt).abs().pow(p).sum((0, 2, 3))
+        return (pred - tgt).abs().pow(p).sum((0, 2, 3))
     else:
-        return (pred-tgt).abs().pow(p).mean()
-
+        return (pred - tgt).abs().pow(p).mean()

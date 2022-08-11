@@ -1,17 +1,18 @@
-import torch
-import torch.nn as nn
-import copy
-import time
+import argparse
 import os
 import random
-import argparse
+
 import numpy as np
-from CIFAR.main_train import build_data
-from CIFAR.models.vgg import VGG
-from CIFAR.models.resnet import resnet20, res_specials
-from CIFAR.models.calibration import GetLayerInputOutput, bias_corr_model, weights_cali_model
-from CIFAR.models.fold_bn import search_fold_and_remove_bn
-from CIFAR.models.spiking_layer import SpikeModel, get_maximum_activation
+import torch
+
+from main_train_cifar import build_data
+from models.calibration import bias_corr_model
+from models.CIFAR.models.resnet import res_specials
+from models.CIFAR.models.resnet import resnet20 as resnet20_cifar
+from models.CIFAR.models.resnet import resnet32 as resnet32_cifar
+from models.CIFAR.models.vgg import VGG
+from models.fold_bn import search_fold_and_remove_bn
+from models.spiking_layer import SpikeModel, get_maximum_activation
 
 
 def seed_all(seed=1029):
@@ -51,10 +52,11 @@ if __name__ == '__main__':
 
     parser.add_argument('--dataset', default='CIFAR10', type=str, help='dataset name', choices=['CIFAR10', 'CIFAR100'])
     parser.add_argument('--arch', default='VGG16', type=str, help='network architecture', choices=['VGG16', 'res20'])
-    parser.add_argument('--dpath', required=True, type=str, help='dataset directory')
+    parser.add_argument('--dpath', default='./datasets', type=str, help='dataset directory')
+    parser.add_argument('--model', default='', type=str, help='model path')
     parser.add_argument('--seed', default=1000, type=int, help='random seed to reproduce results')
     parser.add_argument('--batch_size', default=128, type=int, help='minibatch size')
-
+    parser.add_argument('--device', default='', type=str, help='device select')
     parser.add_argument('--calib', default='none', type=str, help='calibration methods',
                         choices=['none', 'light', 'advanced'])
     parser.add_argument('--T', default=16, type=int, help='snn simulation length')
@@ -63,6 +65,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
     results_list = []
     use_bn = args.usebn
+
+    if args.device == '':
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # we run the experiments for 5 times, with different random seeds
     for i in range(5):
@@ -85,8 +90,10 @@ if __name__ == '__main__':
 
         load_path = 'raw/' + args.dataset + '/' + args.arch + '_wBN_wd5e4_state_dict.pth' if use_bn else \
             'raw/' + args.dataset + '/' + args.arch + '_woBN_wd1e4_state_dict.pth'
+        if args.model != '':
+            load_path = args.model
 
-        state_dict = torch.load(load_path, map_location=torch.device('cpu'))
+        state_dict = torch.load(load_path, map_location=device)
         ann.load_state_dict(state_dict, strict=True)
         search_fold_and_remove_bn(ann)
         ann.cuda()

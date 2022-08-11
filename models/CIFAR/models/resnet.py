@@ -7,8 +7,8 @@ Reference:
 import torch
 import torch.nn as nn
 import math
-from CIFAR.models.utils import StraightThrough
-from CIFAR.models.spiking_layer import SpikeModel, SpikeModule, Union
+from ...utils import StraightThrough
+from ...spiking_layer import SpikeModule, Union
 
 
 def conv3x3(in_planes, out_planes, stride=1):
@@ -114,6 +114,7 @@ class SpikeResModule(SpikeModule):
     threshold :param that decides the maximum value
     conv :param is the original normal conv2d module
     """
+
     def __init__(self, sim_length: int, conv: Union[nn.Conv2d, nn.Linear], enable_shift: bool = True):
         super(SpikeResModule, self).__init__(sim_length, conv, enable_shift)
 

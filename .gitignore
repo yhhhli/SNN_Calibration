@@ -39,6 +39,22 @@
 ehthumbs.db
 Thumbs.db
 
+# IDE generated files #
+######################
+.vscode
+
+# python generated files #
+######################
+__pycache__
+
 # Ignore ImageNet Pre-trained Models #
 ######################################
 *ImageNet/checkpoint/*
+
+# Ignore datasets #
+######################################
+datasets/*
+
+# Ignore saved models #
+######################################
+raw/*

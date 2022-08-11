@@ -1,4 +1,3 @@
-import torch
 import torch.nn as nn
 from ImageNet.models.vgg import load_model_pytorch
 
@@ -36,7 +35,7 @@ def conv_dw(inp, oup, stride, simplified=False):
 
 
 class MobileNet(nn.Module):
-    def __init__(self, simplified = False):
+    def __init__(self, simplified=False):
         super(MobileNet, self).__init__()
 
         self.model = nn.Sequential(

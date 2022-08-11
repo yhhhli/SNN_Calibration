@@ -35,7 +35,7 @@ class VGG(nn.Module):
                 m.bias.data.zero_()
             elif isinstance(m, nn.Linear):
                 n = m.weight.size(1)
-                m.weight.data.normal_(0, 1.0/float(n))
+                m.weight.data.normal_(0, 1.0 / float(n))
                 m.bias.data.zero_()
 
     def forward(self, x):
@@ -60,6 +60,6 @@ class VGG(nn.Module):
 
 def test():
     net = VGG('VGG16', use_bn=True)
-    x = torch.randn(2,3,32,32)
+    x = torch.randn(2, 3, 32, 32)
     y = net(x)
     print(y.size())

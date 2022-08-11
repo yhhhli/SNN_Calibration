@@ -1,18 +1,19 @@
-import torch
-import torchvision
+import argparse
 import os
 import random
-import argparse
+
 import numpy as np
-import torchvision.transforms as transforms
+import torch
 import torchvision.datasets as datasets
-from ImageNet.models.vgg import vgg16, vgg16_bn, vgg_specials
-from ImageNet.models.resnet import resnet34_snn, res_spcials
-from CIFAR.models.calibration import bias_corr_model, weights_cali_model
-from CIFAR.models.fold_bn import search_fold_and_remove_bn
-from CIFAR.models.spiking_layer import SpikeModel, get_maximum_activation
-from distributed_utils import initialize, get_local_rank
-from ImageNet.models.mobilenet import mobilenetv1
+import torchvision.transforms as transforms
+
+from distributed_utils import get_local_rank, initialize
+from models.calibration import bias_corr_model, weights_cali_model
+from models.fold_bn import search_fold_and_remove_bn
+from models.ImageNet.models.mobilenet import mobilenetv1
+from models.ImageNet.models.resnet import res_spcials, resnet34_snn
+from models.ImageNet.models.vgg import vgg16, vgg16_bn, vgg_specials
+from models.spiking_layer import SpikeModel, get_maximum_activation
 
 
 def build_imagenet_data(data_path: str = '', input_size: int = 224, batch_size: int = 64, workers: int = 4,
@@ -24,7 +25,7 @@ def build_imagenet_data(data_path: str = '', input_size: int = 224, batch_size: 
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225])
 
-    #torchvision.set_image_backend('accimage')
+    # torchvision.set_image_backend('accimage')
     train_dataset = datasets.ImageFolder(
         traindir,
         transforms.Compose([
@@ -53,7 +54,7 @@ def build_imagenet_data(data_path: str = '', input_size: int = 224, batch_size: 
         train_dataset, batch_size=batch_size, shuffle=(train_sampler is None),
         num_workers=workers, pin_memory=True, sampler=train_sampler)
     val_loader = torch.utils.data.DataLoader(
-        val_dataset,batch_size=batch_size, shuffle=False,
+        val_dataset, batch_size=batch_size, shuffle=False,
         num_workers=workers, pin_memory=True, sampler=val_sampler)
     return train_loader, val_loader
 
@@ -140,7 +141,8 @@ if __name__ == '__main__':
         search_fold_and_remove_bn(ann)
         ann.cuda()
 
-        snn = SpikeModel(model=ann, sim_length=sim_length, specials=vgg_specials if args.arch =='VGG16' else res_spcials)
+        snn = SpikeModel(model=ann, sim_length=sim_length,
+                         specials=vgg_specials if args.arch == 'VGG16' else res_spcials)
         snn.cuda()
 
         mse = False if args.calib == 'none' else True
