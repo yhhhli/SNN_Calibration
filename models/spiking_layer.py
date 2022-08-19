@@ -98,7 +98,7 @@ class SpikeModel(nn.Module):
                     continue
             elif isinstance(immediate_child_module, nn.Linear):
                 self.classifier = copy.deepcopy(immediate_child_module)
-                setattr(module, name, StraightThrough())
+                # setattr(module, name, StraightThrough())
             else:
                 prev_module = self.spike_module_refactor(
                     immediate_child_module, sim_length=sim_length, prev_module=prev_module)

@@ -15,7 +15,7 @@ from models.CIFAR.models.resnet import resnet20, resnet32
 from models.CIFAR.models.vgg import VGG
 
 
-def build_data(dpath='./datasets', batch_size=128, cutout=False, workers=4, use_cifar10=False, auto_aug=False):
+def build_data(batch_size=128, cutout=False, workers=4, use_cifar10=False, auto_aug=False, dpath='./datasets'):
 
     aug = [transforms.RandomCrop(32, padding=4), transforms.RandomHorizontalFlip()]
     if auto_aug:
@@ -94,7 +94,8 @@ if __name__ == '__main__':
     use_cifar10 = args.dataset == 'CIFAR10'
 
     num_workers = args.workers if not platform.system().lower() == 'windows' else 0
-    train_loader, test_loader = build_data(batch_size, cutout=True, workers=num_workers, use_cifar10=use_cifar10, auto_aug=True)
+    train_loader, test_loader = build_data(
+        batch_size, cutout=True, workers=num_workers, use_cifar10=use_cifar10, auto_aug=True)
     best_acc = 0
     best_epoch = 0
     use_bn = args.usebn
@@ -119,7 +120,7 @@ if __name__ == '__main__':
     criterion = nn.CrossEntropyLoss().to(device)
     # build optimizer
     optimizer = torch.optim.SGD(ann.parameters(), lr=0.1, momentum=0.9, weight_decay=5e-4) if use_bn else \
-                torch.optim.SGD(ann.parameters(), lr=0.01, momentum=0.9, weight_decay=1e-4)
+        torch.optim.SGD(ann.parameters(), lr=0.01, momentum=0.9, weight_decay=1e-4)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, eta_min=0, T_max=num_epochs)
 
     if args.resume:
@@ -137,7 +138,6 @@ if __name__ == '__main__':
             criterion = ckpt['loss']
             optimizer = ckpt['optimizer']
             scheduler = ckpt['scheduler']
-   
 
     for epoch in range(start_epoch, num_epochs):
         running_loss = 0
@@ -155,7 +155,9 @@ if __name__ == '__main__':
             optimizer.step()
             if (i + 1) % 100 == 0:
                 pbar.set_description('Epoch [%d/%d], Step [%d/%d], Loss: %.5f, Time elapsed: %.3fs'
-                        % (epoch + 1, num_epochs, i + 1, len(train_loader) // batch_size, running_loss/100, time.time() - start_time))
+                                     % (epoch + 1, num_epochs, i + 1,
+                                        len(train_loader) // batch_size,
+                                        running_loss / 100, time.time() - start_time))
                 running_loss = 0
 
         scheduler.step()
@@ -195,4 +197,3 @@ if __name__ == '__main__':
                     'best_acc': best_acc, 'loss': criterion, 'optimizer': optimizer, 'scheduler': scheduler},
                    model_save_name)
         print(f'Iters: {epoch + 1} best_acc is: {best_acc} find in epoch: {best_epoch}\n')
-

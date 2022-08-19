@@ -1,6 +1,7 @@
 import argparse
 import os
 import random
+from unittest import result
 
 import numpy as np
 import torch
@@ -66,8 +67,11 @@ if __name__ == '__main__':
     results_list = []
     use_bn = args.usebn
 
+    device = args.device
     if args.device == '':
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    best_val_result = 0
 
     # we run the experiments for 5 times, with different random seeds
     for i in range(5):
@@ -113,7 +117,14 @@ if __name__ == '__main__':
             bias_corr_model(model=snn, train_loader=train_loader, correct_mempot=True)
 
         snn.set_spike_state(use_spike=True)
-        results_list.append(validate_model(test_loader, snn))
+        val_result = validate_model(test_loader, snn)
+        results_list.append(val_result)
+
+        if best_val_result < val_result:
+            best_val_result = val_result
+            file, ext = os.path.splitext(load_path)
+            model_cal_name = file + '_cal' + ext
+            torch.save(snn, model_cal_name)
 
     a = np.array([results_list])
     print(a.mean(), a.std())
