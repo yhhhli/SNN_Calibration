@@ -3,7 +3,7 @@
 
 Paper Version 1: [[PMLR]](http://proceedings.mlr.press/v139/li21d/li21d.pdf), [[arXiv]](https://arxiv.org/pdf/2106.06984.pdf).
 
-Paper Version 2: [[arXiv]](https://arxiv.org/pdf/2205.10121.pdf).
+Paper Version 2: [[IJCV]](https://link.springer.com/article/10.1007/s11263-024-02046-2).
 
 When converting ANNs to SNNs, conventional methods ensure the minimization in parameter space, while we focus on the minimization in network output space:
 
