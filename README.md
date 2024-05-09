@@ -109,13 +109,13 @@ If you feel this repo helps you, please consider citing the following articles:
   year={2022}
 }
 
-@inproceedings{li2021free,
-  title={A free lunch from ANN: Towards efficient, accurate spiking neural networks calibration},
-  author={Li, Yuhang and Deng, Shikuang and Dong, Xin and Gong, Ruihao and Gu, Shi},
-  booktitle={International Conference on Machine Learning},
-  pages={6316--6325},
-  year={2021},
-  organization={PMLR}
+@article{li2024error,
+  title={Error-Aware Conversion from ANN to SNN via Post-training Parameter Calibration},
+  author={Li, Yuhang and Deng, Shikuang and Dong, Xin and Gu, Shi},
+  journal={International Journal of Computer Vision},
+  pages={1--24},
+  year={2024},
+  publisher={Springer}
 }
 ```
 
